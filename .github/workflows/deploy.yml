@@ -27,7 +27,7 @@ jobs:
 
   deploy:
     needs: test
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && vars.RSI_URL != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

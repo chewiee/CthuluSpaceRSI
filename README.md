@@ -47,7 +47,7 @@ changes scoring can't mint Favor.
 
 ## Running the world
 
-- **Pause rituals:** `curl -X POST https://rsi.rannabansal.com/api/admin/pause -H "Authorization: Bearer $ADMIN_TOKEN" -d '{"paused":true}'`
+- **Pause rituals:** `curl -X POST https://rlyeh.rannabansal.com/api/admin/pause -H "Authorization: Bearer $ADMIN_TOKEN" -d '{"paused":true}'`
 - **Reject a queued ritual (refunds):** `POST /api/admin/reject` with `{"id": 12, "note": "why"}`
 - **Undo a bad ritual:** Actions → Rollback → `era-11` (or `game-v0` for the original)
 - **Run a ritual now:** Actions → Ritual → Run workflow

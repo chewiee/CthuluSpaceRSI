@@ -19,7 +19,7 @@ npx wrangler d1 create cthuluspace-rsi        # paste database_id into wrangler.
 npm run db:init:remote
 npx wrangler secret put RUNNER_TOKEN           # long random string, e.g. `openssl rand -hex 32`
 npx wrangler secret put ADMIN_TOKEN            # a different long random string
-npm run deploy                                 # first deploy; creates rsi.rannabansal.com
+npm run deploy                                 # first deploy; creates rlyeh.rannabansal.com
 ```
 
 Create a Cloudflare API token (you) with *Workers Scripts: Edit*, *D1: Edit* and
@@ -36,7 +36,7 @@ Then in the repo settings:
 
 - **Secrets:** `ANTHROPIC_API_KEY`, `RSI_RUNNER_TOKEN` (same value as the Worker's
   `RUNNER_TOKEN`), `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
-- **Variables:** `RSI_URL` = `https://rsi.rannabansal.com`
+- **Variables:** `RSI_URL` = `https://rlyeh.rannabansal.com`
 - **Actions → General → Workflow permissions:** allow GitHub Actions to create and
   approve pull requests.
 - Don't require reviews on `main`, because rituals merge themselves once checks pass.

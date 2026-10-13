@@ -27,6 +27,8 @@ env:
 
 jobs:
   summon:
+    # Stays off until setup is finished (SETUP.md sets the RSI_URL variable last).
+    if: vars.RSI_URL != ''
     runs-on: ubuntu-latest
     timeout-minutes: 25
     outputs:

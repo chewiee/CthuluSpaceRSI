@@ -17,7 +17,7 @@
     }
   ],
   "routes": [
-    { "pattern": "rsi.rannabansal.com", "custom_domain": true }
+    { "pattern": "rlyeh.rannabansal.com", "custom_domain": true }
   ],
   // Guardrails. These are the single source of truth: the ritual runner reads
   // the model and per-ritual budget from the claim response.
