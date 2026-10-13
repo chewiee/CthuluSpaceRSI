@@ -1,0 +1,35 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cthuluspace-rsi",
+  "main": "platform/worker/index.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    // Built by scripts/build.mjs from game/ + platform/client/.
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cthuluspace-rsi",
+      // Filled in by `npx wrangler d1 create cthuluspace-rsi` (see SETUP.md).
+      "database_id": "REPLACE_ME"
+    }
+  ],
+  "routes": [
+    { "pattern": "rsi.rannabansal.com", "custom_domain": true }
+  ],
+  // Guardrails. These are the single source of truth: the ritual runner reads
+  // the model and per-ritual budget from the claim response.
+  "vars": {
+    "MONTHLY_BUDGET_USD": "10",
+    "PER_RITUAL_BUDGET_USD": "0.50",
+    "MAX_RITUALS_PER_DAY": "2",
+    "RITUAL_MODEL": "claude-sonnet-5-5",
+    "RITUAL_MAX_TURNS": "25",
+    "RITUAL_FAVOR_COST": "100",
+    "MAX_FAVOR_PER_RUN": "30",
+    "MAX_FAVOR_PER_DAY": "150",
+    "MAX_PROMPT_CHARS": "300"
+  }
+}

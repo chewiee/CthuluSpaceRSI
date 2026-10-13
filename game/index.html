@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <title>CthuluSpaceRSI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  </head>
+
+  <body>
+    <div id="canvas-container">
+      <canvas></canvas>
+    </div>
+
+    <link href='https://fonts.googleapis.com/css?family=Anton' rel='stylesheet' type='text/css'>
+
+    <script type="application/javascript" src="vendor/keymaster.js"></script>
+
+    <script type="application/javascript" src="lib/imageLoader.js"></script>
+    <script type="application/javascript" src="lib/util.js"></script>
+    <script type="application/javascript" src="lib/movingObject.js"></script>
+    <script type="application/javascript" src="lib/clickIndicator.js"></script>
+    <script type="application/javascript" src="lib/directionIndicator.js"></script>
+    <script type="application/javascript" src="lib/cthulu.js"></script>
+    <script type="application/javascript" src="lib/planet.js"></script>
+    <script type="application/javascript" src="lib/game.js"></script>
+    <script type="application/javascript" src="lib/gameView.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="lib/game.css">
+
+    <script type="application/javascript">
+      (function () {
+        var canvasEl = document.getElementsByTagName("canvas")[0];
+        canvasEl.width = CthuluSpace.Game.DIM_X;
+        canvasEl.height = CthuluSpace.Game.DIM_Y;
+        var ctx = canvasEl.getContext("2d");
+        var game = new CthuluSpace.Game();
+        CthuluSpace.ImageLoader = new CthuluSpace.ImageLoader();
+        new CthuluSpace.GameView(game, ctx).startImageLoad();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,207 @@
+# The ritual pipeline. Slow on purpose: one ritual per run, every 6 hours, with
+# the platform enforcing daily and monthly limits on top.
+#
+#   summon  (ANTHROPIC_API_KEY)   claim -> Claude edits game/ -> patch artifact
+#   judge   (no secrets)          diff gatekeeper + headless smoke test
+#   ascend  (Cloudflare + write)  PR -> squash merge -> deploy -> tag era
+#   settle  (runner token)        mark failed/rejected and refund if anything above failed
+#
+# AI-written code only ever executes in `judge`, which holds no secrets.
+name: Ritual
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ritual
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  RSI_URL: ${{ vars.RSI_URL }}
+  RITUAL_DIR: ${{ github.workspace }}/.ritual-work
+
+jobs:
+  summon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      id: ${{ steps.claim.outputs.id }}
+      changed: ${{ steps.patch.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Claim the next ritual
+        id: claim
+        env:
+          RSI_RUNNER_TOKEN: ${{ secrets.RSI_RUNNER_TOKEN }}
+        run: node ritual/claim.mjs
+
+      - name: Install Claude Code
+        if: steps.claim.outputs.id
+        run: npm install -g @anthropic-ai/claude-code@2.1.296
+
+      - name: Perform the ritual
+        if: steps.claim.outputs.id
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RSI_RUNNER_TOKEN: ${{ secrets.RSI_RUNNER_TOKEN }}
+        run: node ritual/summon.mjs
+
+      - name: Package the patch
+        id: patch
+        if: steps.claim.outputs.id
+        run: |
+          git add -A
+          git diff --cached --binary > "$RITUAL_DIR/ritual.patch"
+          if [ -s "$RITUAL_DIR/ritual.patch" ]; then echo "changed=true" >> "$GITHUB_OUTPUT"; else echo "changed=false" >> "$GITHUB_OUTPUT"; fi
+          git diff --cached --stat
+
+      - uses: actions/upload-artifact@v4
+        if: steps.claim.outputs.id
+        with:
+          name: ritual
+          path: ${{ env.RITUAL_DIR }}/
+          retention-days: 30
+
+  judge:
+    needs: summon
+    if: needs.summon.outputs.id && needs.summon.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ritual
+          path: ${{ env.RITUAL_DIR }}
+
+      - name: Gatekeeper
+        run: |
+          set -o pipefail
+          node scripts/check-ritual-diff.mjs "$RITUAL_DIR/ritual.patch" 2>&1 | tee "$RITUAL_DIR/judge.log"
+
+      - name: Apply the ritual
+        run: git apply --index "$RITUAL_DIR/ritual.patch"
+
+      - name: Install
+        run: npm ci && npx playwright install --with-deps chromium
+
+      - name: Smoke test
+        run: |
+          set -o pipefail
+          npm run smoke 2>&1 | tee "$RITUAL_DIR/judge.log"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: judge
+          path: ${{ env.RITUAL_DIR }}/judge.log
+
+  ascend:
+    needs: [summon, judge]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ritual
+          path: ${{ env.RITUAL_DIR }}
+
+      - name: Open and merge the PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ID: ${{ needs.summon.outputs.id }}
+        run: |
+          git config user.name "Ritual Engine"
+          git config user.email "rituals@users.noreply.github.com"
+          git switch -c "ritual/$ID"
+          git apply --index "$RITUAL_DIR/ritual.patch"
+          node -e '
+            const c = require(process.env.RITUAL_DIR + "/claim.json");
+            const s = require("fs").readFileSync(process.env.RITUAL_DIR + "/summary.txt", "utf8");
+            const p = c.ritual.prompt.replace(/\s+/g, " ");
+            require("fs").writeFileSync(process.env.RITUAL_DIR + "/title.txt", `Ritual #${c.ritual.id}: ${p.slice(0, 60)}${p.length > 60 ? "…" : ""}`);
+            require("fs").writeFileSync(process.env.RITUAL_DIR + "/body.md", `## Player ritual\n\n> ${p}\n\n## What the Ritual Engine did\n\n${s}\n\nModel: ${c.model} · budget $${c.budgetUsd}. Passed the gatekeeper and smoke test.`);
+          '
+          git commit -q -F "$RITUAL_DIR/title.txt"
+          git push -q origin "ritual/$ID"
+          url=$(gh pr create --base main --head "ritual/$ID" --title "$(cat "$RITUAL_DIR/title.txt")" --body-file "$RITUAL_DIR/body.md")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          gh pr merge "$url" --squash --delete-branch
+
+      - name: Deploy the new era
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ID: ${{ needs.summon.outputs.id }}
+        run: |
+          git switch -q main
+          git pull -q origin main
+          npm ci
+          npm run deploy
+          git tag "era-$ID"
+          git push -q origin "era-$ID"
+
+      - name: Record the deploy
+        env:
+          RSI_RUNNER_TOKEN: ${{ secrets.RSI_RUNNER_TOKEN }}
+          ID: ${{ needs.summon.outputs.id }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        run: node ritual/report.mjs "$ID" deployed "$RITUAL_DIR/summary.txt" "$PR_URL"
+
+  settle:
+    needs: [summon, judge, ascend]
+    if: always() && needs.summon.outputs.id && needs.ascend.result != 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.RITUAL_DIR }}
+          merge-multiple: true
+
+      - name: Mark failed and refund
+        env:
+          RSI_RUNNER_TOKEN: ${{ secrets.RSI_RUNNER_TOKEN }}
+          ID: ${{ needs.summon.outputs.id }}
+          CHANGED: ${{ needs.summon.outputs.changed }}
+          JUDGE: ${{ needs.judge.result }}
+        run: |
+          if [ "$CHANGED" != "true" ]; then
+            node ritual/report.mjs "$ID" failed "$RITUAL_DIR/summary.txt"
+          elif [ "$JUDGE" = "failure" ]; then
+            node ritual/report.mjs "$ID" rejected "$RITUAL_DIR/judge.log"
+          else
+            echo "Ritual failed in the deploy stage" > "$RITUAL_DIR/stage.txt"
+            node ritual/report.mjs "$ID" failed "$RITUAL_DIR/stage.txt"
+          fi

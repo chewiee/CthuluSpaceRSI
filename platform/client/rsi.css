@@ -1,0 +1,59 @@
+/* CthuluSpaceRSI overlay. Protected platform code. */
+.rsi-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 16px;
+  font: 16px/1.2 Anton, Impact, sans-serif; letter-spacing: 0.04em;
+  color: #c8ffb0; background: rgba(0, 0, 0, 0.55);
+}
+.rsi-name { font-size: 20px; }
+.rsi-spacer { flex: 1; }
+.rsi-favor { color: #ffd76a; }
+.rsi-btn {
+  font: inherit; letter-spacing: inherit; cursor: pointer;
+  padding: 6px 12px; border: 1px solid #6fbf4a; border-radius: 4px;
+  color: #c8ffb0; background: #10220a;
+}
+.rsi-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.rsi-primary { background: #2b5a16; color: #fff; }
+.rsi-ghost { border-color: transparent; background: transparent; }
+.rsi-panel {
+  position: fixed; inset: 0; z-index: 20;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 56px 16px 16px; overflow-y: auto;
+  background: rgba(0, 0, 0, 0.7);
+}
+.rsi-panel[hidden], .rsi-toast[hidden] { display: none; }
+.rsi-card {
+  width: 100%; max-width: 520px; box-sizing: border-box;
+  padding: 16px 20px; border: 1px solid #3d6b28; border-radius: 8px;
+  font: 15px/1.45 system-ui, sans-serif; color: #e4f5dc; background: #070d05;
+}
+.rsi-card h2, .rsi-card h3 { font-family: Anton, Impact, sans-serif; letter-spacing: 0.04em; font-weight: normal; margin: 0; }
+.rsi-card h2 { font-size: 26px; color: #c8ffb0; }
+.rsi-card h3 { font-size: 17px; color: #ffd76a; margin-bottom: 8px; }
+.rsi-head { display: flex; justify-content: space-between; align-items: center; }
+.rsi-section { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.rsi-muted { color: #93a88a; font-size: 13px; margin: 4px 0 0; }
+.rsi-input {
+  width: 100%; box-sizing: border-box; resize: vertical;
+  padding: 8px; border: 1px solid #3d6b28; border-radius: 4px;
+  font: inherit; color: inherit; background: #0f1a0b;
+}
+.rsi-chronicle { margin: 0; padding-left: 0; list-style: none; width: 100%; }
+.rsi-chronicle li { padding: 6px 0; border-top: 1px solid #1c2e14; overflow-wrap: anywhere; }
+.rsi-chronicle a { color: #8fd1ff; }
+.rsi-status {
+  display: inline-block; min-width: 64px; text-align: center;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 1px 6px; border-radius: 3px; background: #23331c;
+}
+.rsi-deployed { background: #2b5a16; color: #fff; }
+.rsi-running { background: #6b5a14; color: #fff; }
+.rsi-failed, .rsi-rejected { background: #5a1616; color: #fff; }
+.rsi-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 30;
+  padding: 10px 16px; border-radius: 6px;
+  font: 18px Anton, Impact, sans-serif; letter-spacing: 0.04em;
+  color: #ffd76a; background: rgba(0, 0, 0, 0.8);
+}

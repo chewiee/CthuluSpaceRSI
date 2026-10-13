@@ -1,0 +1,40 @@
+# Undo a bad ritual: restores game/ from an earlier era tag (or any commit) and deploys.
+# Actions → Rollback → Run workflow → e.g. "era-12" or "game-v0".
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Era tag or commit to restore game/ from (e.g. era-12, game-v0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Restore game/
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          git rev-parse --verify "$REF^{commit}"
+          git config user.name "Ritual Engine"
+          git config user.email "rituals@users.noreply.github.com"
+          git rm -rq game
+          git checkout "$REF" -- game
+          git commit -qm "Rollback game/ to $REF" || echo "game/ already matches $REF"
+          git push -q origin main
+      - run: npm ci && npm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
