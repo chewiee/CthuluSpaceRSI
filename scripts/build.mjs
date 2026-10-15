@@ -20,7 +20,9 @@ cpSync(join(root, "platform", "client"), join(dist, "rsi"), { recursive: true })
 
 const indexPath = join(dist, "index.html");
 let html = readFileSync(indexPath, "utf8");
-const inject = '\n    <link rel="stylesheet" href="/rsi/rsi.css">\n    <script src="/rsi/rsi.js"></script>';
+// The charset goes first: without it browsers decode the overlay's UTF-8 text
+// (·, “ ”, …) as Windows-1252.
+const inject = '\n    <meta charset="utf-8">\n    <link rel="stylesheet" href="/rsi/rsi.css">\n    <script src="/rsi/rsi.js"></script>';
 html = /<head[^>]*>/i.test(html)
   ? html.replace(/<head[^>]*>/i, (m) => m + inject)
   : inject + "\n" + html;
