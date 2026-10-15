@@ -12,8 +12,8 @@
     {
       "binding": "DB",
       "database_name": "cthuluspace-rsi",
-      // Filled in by `npx wrangler d1 create cthuluspace-rsi` (see SETUP.md).
-      "database_id": "REPLACE_ME"
+      // Created with `npx wrangler d1 create cthuluspace-rsi`.
+      "database_id": "d792babf-0b22-44b1-9a1e-fe5f894760a2"
     }
   ],
   "routes": [

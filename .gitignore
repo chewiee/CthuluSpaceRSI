@@ -4,3 +4,4 @@ dist/
 .dev.vars
 *.patch
 .ritual-work/
+.secrets.local
